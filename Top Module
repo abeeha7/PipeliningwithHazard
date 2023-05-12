@@ -1,4 +1,4 @@
-module RISC_V_Processor(  
+module Task3_RISC_V_Processor(  
 
   
 
@@ -87,11 +87,8 @@ module RISC_V_Processor(
   
 
    output wire[63:0] imm
-    
-
-    
-
 );  
+
 wire [63:0] normal_adder;  
 wire [2:0] funct3;  
 wire [6:0] funct7;  
@@ -112,40 +109,75 @@ wire [4:0] rd3;
 wire [31:0]  ins;
 wire [63:0] PC_Out1;
 wire [63:0]  a_mux;
-wire [63:0]  b_mux;
 wire pc_wire;
 wire is_greater;
-wire [4:0] rs1_store;
-wire [4:0] rs2_store;
-
-
+wire is_greater1;
+wire switch, Flushout;
+wire ALUsrc_ID;
+wire Branch_ID_EX;
+wire RegWrite_ID_EX;
+wire MemRead_ID_EX;
+wire MemWrite_ID_EX;
+wire MemtoReg_ID_EX;
+wire [1:0]ALUop_ID_EX;
+wire controlmux,IFID_Write,PCWrite;
+wire [4:0]rs1_store, rs2_store;
   
-Mux m1 (normal_adder, branch_adder, Branch1&ZERO, PC_In); //PC src, deciding which pc_in to use 
-Program_Counter p1 (clk,reset,PC_In, PC_Out); //Program counter taking in PC_in from the adders and giving a pc_out  
+Mux m1 (normal_adder, branch_adder2, switch, PC_In); //PC src, deciding which pc_in to use 
+Program_Counter_3 p1 (clk,reset,PCWrite,PC_In, PC_Out); //Program counter taking in PC_in from the adders and giving a pc_out  
 Adder a1 (PC_Out, 64'b100, normal_adder); //adder adding 4 to take to the next instruction  
 Instruction_Memory i1 (PC_Out,instruction); //reading the instruction  
-IF_ID u1(clk,PC_Out,instruction,PC_Out1,ins); 
+
+
+IF_ID_task3 u1(clk,Flushout,IFID_Write,instruction,PC_Out,ins,PC_Out1); 
+
 InsParser in1(ins,opcode,rd,funct3,rs1,rs2,funct7); //decoding the instruction  
 assign Func[3] = ins[30];  
 assign Func[2:0] = ins[14:12];
 Control_Unit c1 (opcode,Branch, MemRead, MemtoReg, MemWrite, ALUSrc, RegWrite, ALUOp); //control unit giving the control signals  
+
 ImmGen im1(ins,imm_data);  //immediate generation of the immediate value  
+
+Hazard_Detection h1(rd1,rs1,rs2,MemRead1,controlmux,IFID_Write, PCWrite);  
+  
+assign ALUsrc_ID = controlmux ? ALUSrc : 0;
+assign Branch_ID_EX = controlmux ? Branch : 0;
+assign RegWrite_ID_EX = controlmux ? RegWrite : 0;
+assign MemRead_ID_EX = controlmux ? MemRead : 0;
+assign MemWrite_ID_EX = controlmux ? MemWrite : 0;
+assign MemtoReg_ID_EX = controlmux ? MemtoReg : 0;
+assign ALUop_ID_EX = controlmux ? ALUOp : 2'b00;
+
 registerFile r1 (WriteData,rs1,rs2,rd3,RegWrite3, clk, reset,ReadData1,ReadData2);  //working in the register block  
-ID_EX u2(clk,PC_Out1,ReadData1,ReadData2,imm_data,Func,rd,rs1,rs2,MemtoReg, RegWrite,Branch, MemWrite, MemRead,ALUSrc,ALUOp,funct3,PC_Out2,ReadData11,ReadData21,imm_data1,Func1,rd1,MemtoReg1, RegWrite1,Branch1, MemWrite1, MemRead1,ALUSrc1,ALUOp1,rs1_store,rs2_store,funct31); 
+wire [2:0]funct3_ID_EX;
+ID_EX_task3 u2(clk,Flushout,Branch_ID_EX,MemWrite_ID_EX,MemRead_ID_EX,MemtoReg_ID_EX,ALUsrc_ID,RegWrite_ID_EX,ALUop_ID_EX,PC_Out1,ReadData1,ReadData2,imm_data,Func,funct3,rd,rs1,rs2,Branch1,MemWrite1,MemRead1,MemtoReg1,RegWrite1,ALUSrc1,ALUOp1,PC_Out2,ReadData11,ReadData21,imm_data1,Func1,funct3_ID_EX,rd1,rs1_store,rs2_store); 
+
 assign imm=imm_data1<<1;  
+wire [63:0]  b_mux;
 wire [1:0] fwd_A_out, fwd_B_out;
+
 ALU_Control alu_c1 (ALUOp1, Func1,operation); //deciding the operation for alu  
+
+
 mux_triple v3 (ReadData11,WriteData,Result1,fwd_A_out,a_mux);
 mux_triple v4 (ReadData21,WriteData,Result1,fwd_B_out,b_mux);
+
 Mux m2 (b_mux,imm_data1, ALUSrc1, ALU_input2); //ALU src, deciding what goes to the alu  
-ALU_64_bit alu1 (a_mux, ALU_input2,operation ,funct31, Result, ZERO); //alu performing the said operation  
+ALU_64_bit_3 alu1 (a_mux, ALU_input2,operation ,funct3_ID_EX, Result, ZERO,is_greater); //alu performing the said operation  
+
 Forwarding_Unit v6(rd2,rd3,rs1_store,rs2_store,RegWrite2, MemtoReg2,RegWrite3,fwd_A_out,fwd_B_out);
+
 Adder a2 (PC_Out2, imm, branch_adder); //adder adding in the branch value  
-EX_MEM u3 (clk,RegWrite1, MemtoReg1, Branch1, ZERO,is_greater, MemWrite1, MemRead1,branch_adder, Result, ReadData21,Func1,rd1,RegWrite2, MemtoReg2, Branch2, Zero1,is_greater1, MemWrite2, MemRead2,branch_adder2, Result1, ReadData22,Func2,rd2 ); 
+wire [63:0]PC_Out3;
+wire [63:0]b_muxout;
+EX_MEM_task3 u3 (clk,Flushout,branch_adder,Result,ZERO,is_greater,b_mux,rd1,RegWrite1,MemtoReg1,Branch1,MemRead1,MemWrite1,Func1,b_mux,branch_adder2,Result1,ZERO1,is_greater1,ReadData22,rd2,RegWrite2,MemtoReg2,Branch2,MemRead2,MemWrite2,Func2,b_muxout);
+Branch_control_task3 v8(Branch2,ZERO1,is_greater1,Func2,switch,Flushout);
+ 
+ 
 Data_Memory d1(Result1,ReadData22, clk, MemWrite2, MemRead2,read_mem_data); //working with the data memeory  
-MEM_WB u4(clk,RegWrite2, MemtoReg2,read_mem_data,Result1,rd2,RegWrite3, MemtoReg3,read_mem_data2,Result2,rd3); 
-Mux m3 ( Result2,read_mem_data2,MemtoReg3, WriteData); //deciding which data to write back  
 
-endmodule   
+MEM_WB_task3 u4(clk,RegWrite2, MemtoReg2,Result1,read_mem_data,rd2,RegWrite3, MemtoReg3,Result2,read_mem_data2,rd3); 
 
+Mux m3 (Result2,read_mem_data2,MemtoReg3, WriteData); //deciding which data to write back  
 
+endmodule  
