@@ -1,0 +1,310 @@
+module IF_ID_task3(
+    input clk,
+    
+    input Flushout,
+    
+    input IFID_Write,
+    
+    input [31:0]Instruction, 
+    
+    input [63:0]PCOut, 
+    
+    output reg[31:0]Ins, 
+    
+    output reg[63:0]PC
+
+    
+); 
+
+always @(posedge clk)
+begin
+if (Flushout)
+begin
+    Ins = 32'b0; 
+    
+    PC = 64'b0; 
+    
+end
+else if (!IFID_Write)
+begin
+    Ins = Ins;
+    PC = PC;
+end
+else
+begin
+    Ins = Instruction; 
+    
+    PC = PCOut; 
+    
+end
+end
+
+endmodule
+
+
+module ID_EX_task3(
+input clk,
+
+input flush,
+
+input branch, memwrite, memread, memtoreg, alusrc, regwrite, 
+
+input [1:0]ALUop,
+
+input [63:0]PC, 
+
+input [63:0]RD1, RD2, 
+
+input [63:0]Immgen, 
+
+input [3:0]func, 
+
+input [2:0]func3,
+
+input [4:0]RD, 
+
+input [4:0]rd1,
+
+input [4:0]rd2,
+
+output reg branchout, memwriteout, memreadout, memtoregout,regwriteout,alusrcout, 
+
+output reg[1:0]ALUopout,
+
+output reg [63:0]PCout, 
+
+output reg [63:0]RD1out, RD2out, 
+
+output reg [63:0]Immgenout, 
+
+output reg [3:0]funcout,
+
+output reg [2:0]func3out, 
+
+output reg [4:0]RDout,
+
+output reg [4:0]rd1out,
+
+output reg [4:0]rd2out
+
+); 
+always @(posedge clk)
+begin
+if (flush)
+begin
+ branchout = 1'b0; 
+
+ memwriteout = 1'b0; 
+
+ memreadout = 1'b0; 
+
+ memtoregout = 1'b0; 
+
+ regwriteout = 1'b0; 
+
+ alusrcout = 1'b0; 
+ 
+ ALUopout = 2'b0;
+ 
+ PCout = 64'b0; 
+
+ RD1out = 64'b0; 
+
+ RD2out = 64'b0; 
+
+ Immgenout = 64'b0; 
+
+ funcout = 4'b0; 
+ 
+ func3out = 3'b0;
+
+ RDout = 5'b0; 
+ 
+ rd1out = 5'b0;
+ 
+ rd2out = 5'b0;
+end
+else
+begin
+branchout = branch; 
+
+ memwriteout = memwrite; 
+
+ memreadout = memread; 
+
+ memtoregout = memtoreg; 
+
+ regwriteout = regwrite; 
+
+ alusrcout = alusrc; 
+ 
+ ALUopout = ALUop;
+ 
+ PCout = PC; 
+
+ RD1out = RD1; 
+
+ RD2out = RD2; 
+
+ Immgenout = Immgen; 
+
+ funcout = func; 
+ 
+ func3out = func3;
+
+ RDout = RD; 
+ 
+ rd1out = rd1;
+ 
+ rd2out = rd2;
+end
+
+end
+
+endmodule 
+
+
+module EX_MEM_task3(
+input clk,
+
+input flush,
+
+input [63:0]addsum, 
+
+input [63:0]Alures, 
+
+input zero, 
+
+input is_greater,
+
+input [63:0]RD2, 
+
+input [4:0]RD, 
+
+input regwrite, memtoreg, branch, memread,memwrite, 
+
+input [3:0]func,
+
+input [63:0]WriteData,
+
+output reg[63:0]addsumout, 
+
+output reg[63:0]Aluresout, 
+
+output reg zerout,
+
+output reg is_greater_out, 
+
+output reg [63:0]RD2out, 
+
+output reg [4:0]RDout, 
+
+output reg regwriteout, memtoregout, branchout, memreadout, memwriteout ,
+
+output reg[3:0] funcout,
+
+output reg[63:0]WriteDataout
+
+
+
+); 
+always @(posedge clk)
+begin
+if (flush)
+begin
+    addsumout = 0; 
+
+    Aluresout = 0; 
+
+    zerout = 0; 
+    
+    is_greater_out = 0;
+
+    RD2out = 0; 
+
+    RDout = 0; 
+
+    regwriteout = 0; 
+
+    memtoregout = 0; 
+
+    branchout = 0; 
+
+    memreadout = 0; 
+
+    memwriteout = 0; 
+    
+    funcout = 0;
+    
+    WriteDataout = 0;
+    
+end
+else
+begin
+    addsumout = addsum; 
+
+    Aluresout = Alures; 
+
+    zerout = zero; 
+    
+    is_greater_out = is_greater;
+
+    RD2out = RD2; 
+
+    RDout = RD; 
+
+    regwriteout = regwrite; 
+
+    memtoregout = memtoreg; 
+
+    branchout = branch; 
+
+    memreadout = memread; 
+
+    memwriteout = memwrite; 
+    
+    funcout = func;
+    
+    WriteDataout = WriteData;  
+    
+end
+
+end
+
+endmodule  
+
+ 
+module MEM_WB_task3(
+input clk,
+
+input regwrite, memtoreg, 
+
+input [63:0]alures, 
+
+input [63:0]readmem, 
+
+input [4:0]RD, 
+
+output reg regwriteout, memtoregout, 
+
+output reg [63:0]aluresout, 
+
+output reg[63:0]readmemout, 
+
+output reg[4:0]RDout 
+
+); 
+always @(posedge clk)
+begin
+    regwriteout = regwrite; 
+
+    memtoregout = memtoreg; 
+
+    aluresout = alures; 
+
+    readmemout = readmem; 
+
+    RDout = RD; 
+end
+
+endmodule
